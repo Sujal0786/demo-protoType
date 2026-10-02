@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OPD Token Live — Remote Patient & Hospital Sync Prototype</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/style.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+  <!-- TOP MASTER PRESENTATION CONTROLLER BAR -->
+  <header class="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-xl px-4 py-3">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+
+      <!-- Logo & Concept Tagline -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center text-white text-2xl shadow-lg shadow-emerald-500/20 font-black">
+          🎟️
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-black tracking-tight text-white">OPD TOKEN LIVE</h1>
+            <span class="text-[10px] uppercase font-black tracking-widest bg-emerald-950 text-emerald-300 border border-emerald-700/80 px-2 py-0.5 rounded-full">
+              STARTUP PROTOTYPE
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">
+            Home OPD Token Booking for Patients ⇄ Real-Time Hospital OPD Desk Sync
+          </p>
+        </div>
+      </div>
+
+      <!-- Center: View Switcher (Dual / Patient / Hospital) -->
+      <div class="flex items-center bg-slate-950 p-1 rounded-2xl border border-slate-800 shadow-inner">
+        <!-- Dual View -->
+        <button id="btn-view-dual" onclick="switchMainView('dual')"
+                class="px-3 sm:px-4 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 bg-indigo-600 text-white shadow">
+          <span>⚡</span>
+          <span>Dual Sync (Demo View)</span>
+        </button>
+
+        <!-- Patient App Only -->
+        <button id="btn-view-patient" onclick="switchMainView('patient')"
+                class="px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-400 hover:text-white">
+          <span>📱</span>
+          <span>Patient App</span>
+        </button>
+
+        <!-- Hospital Dashboard Only -->
+        <button id="btn-view-hospital" onclick="switchMainView('hospital')"
+                class="px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-400 hover:text-white">
+          <span>🏥</span>
+          <span>Hospital Dashboard</span>
+        </button>
+      </div>
+
+      <!-- Right Controls: RUN DEMO, Language, Reset -->
+        <!-- DOCTOR PITCH DECK PRESENTATION BUTTON -->
+        <button onclick="window.doctorPitchDeck.open()"
+                class="bg-indigo-600 hover:bg-indigo-500 text-white font-black px-3.5 py-2 rounded-xl text-xs sm:text-sm shadow-lg flex items-center gap-1.5 transition active:scale-95"
+                title="Open Doctor Pitch Presentation Deck">
+          <span>📊</span>
+          <span>Doctor Pitch Deck</span>
+        </button>
+
+        <!-- RUN DEMO BUTTON (Screen 16) -->
+        <button onclick="window.demoRunner.startDemo()"
+                class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black px-4 py-2 rounded-xl text-xs sm:text-sm shadow-lg shadow-orange-500/20 flex items-center gap-1.5 transition active:scale-95 animate-pulse">
+          <span>🎬</span>
+          <span>RUN DEMO</span>
+        </button>
+
+        <!-- Language Switcher -->
+        <button id="btn-lang-toggle" onclick="toggleLanguageGlobal()"
+                class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1">
+          <span>🌐</span>
+          <span id="lang-label">English | हिंदी</span>
+        </button>
+
+        <!-- Reset Button -->
+        <button onclick="window.appState.resetToInitial(); window.demoRunner.stopDemo();"
+                class="bg-slate-800 hover:bg-red-950 hover:text-red-300 text-slate-400 border border-slate-700 px-3 py-2 rounded-xl text-xs font-semibold transition"
+                title="Reset all demo data to beginning">
+          🔄 Reset
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Interactive Demo Progress Banner (Screen 16) -->
+  <div id="demo-progress-banner" class="hidden"></div>
+
+  <!-- MAIN INTERACTIVE WORKSPACE -->
+  <main class="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 flex flex-col justify-center">
+
+    <!-- DUAL SIDE-BY-SIDE VIEW (Default) -->
+    <div id="view-dual-container" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- LEFT: Patient Mobile Screen (Home Booking) -->
+      <div class="lg:col-span-5 flex flex-col items-center">
+        <!-- View Label -->
+        <div class="mb-3 text-center">
+          <div class="inline-flex items-center gap-2 bg-emerald-950/80 border border-emerald-700/60 px-3 py-1 rounded-full text-xs font-black text-emerald-400">
+            <span>📱</span>
+            <span>PATIENT APP — SITTING AT HOME</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">Book token from home, avoid hospital queue</p>
+        </div>
+
+        <!-- Phone Mockup Container -->
+        <div class="phone-frame">
+          <div class="phone-notch"></div>
+          <!-- Patient Dynamic Screen Root -->
+          <div id="patient-root-dual" class="w-full h-full pt-4"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Hospital Staff Dashboard (Live Real-Time Sync) -->
+      <div class="lg:col-span-7 flex flex-col">
+        <!-- View Label -->
+        <div class="mb-3 text-center lg:text-left">
+          <div class="inline-flex items-center gap-2 bg-indigo-950/80 border border-indigo-700/60 px-3 py-1 rounded-full text-xs font-black text-indigo-400">
+            <span>🏥</span>
+            <span>HOSPITAL STAFF DASHBOARD — LIVE SYNC</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">OPD reception & doctor call console (Real-time updates)</p>
+        </div>
+
+        <!-- Hospital Dashboard Root -->
+        <div id="hospital-root-dual" class="w-full h-[840px] rounded-3xl overflow-hidden shadow-2xl border border-slate-800"></div>
+      </div>
+
+    </div>
+
+    <!-- SINGLE PATIENT VIEW (When Patient only is selected) -->
+    <div id="view-patient-container" class="hidden flex flex-col items-center justify-center py-4">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div id="patient-root-single" class="w-full h-full pt-4"></div>
+      </div>
+    </div>
+
+    <!-- SINGLE HOSPITAL VIEW (When Hospital only is selected) -->
+    <div id="view-hospital-container" class="hidden w-full max-w-6xl mx-auto py-2">
+      <div id="hospital-root-single" class="w-full min-h-[750px] rounded-3xl overflow-hidden shadow-2xl border border-slate-800"></div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-slate-900 border-t border-slate-800 py-4 px-4 text-center text-xs text-slate-400">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+        <span class="font-bold text-slate-300">OPD Real-Time Synchronization Prototype</span>
+        <span>•</span>
+        <span>First 3 Tokens Free (₹0) → ₹10 / Token Platform Fee</span>
+      </div>
+      <div class="text-slate-500 text-[11px]">
+        Frontend Simulation Prototype (No Backend Required) • Elder & Low-Literacy Friendly
+      </div>
+    </div>
+  </footer>
+
+  <!-- SCRIPT FILES -->
+  <script src="js/mockData.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/patient.js"></script>
+  <script src="js/hospital.js"></script>
+  <script src="js/demoRunner.js"></script>
+  <script src="js/pitchDeck.js"></script>
+
+  <script>
+    // Main Coordinator Script
+    function switchMainView(view) {
+      window.appState.setCurrentView(view);
+      updateViewDisplay(view);
+    }
+
+    function updateViewDisplay(view) {
+      const dualCont = document.getElementById('view-dual-container');
+      const patientCont = document.getElementById('view-patient-container');
+      const hospitalCont = document.getElementById('view-hospital-container');
+
+      const btnDual = document.getElementById('btn-view-dual');
+      const btnPatient = document.getElementById('btn-view-patient');
+      const btnHospital = document.getElementById('btn-view-hospital');
+
+      // Reset classes
+      [btnDual, btnPatient, btnHospital].forEach(btn => {
+        btn.className = "px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-400 hover:text-white";
+      });
+
+      dualCont.classList.add('hidden');
+      patientCont.classList.add('hidden');
+      hospitalCont.classList.add('hidden');
+
+      if (view === 'dual') {
+        dualCont.classList.remove('hidden');
+        btnDual.className = "px-3 sm:px-4 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 bg-indigo-600 text-white shadow";
+        patientUI.init('patient-root-dual');
+        hospitalUI.init('hospital-root-dual');
+      } else if (view === 'patient') {
+        patientCont.classList.remove('hidden');
+        btnPatient.className = "px-3 sm:px-4 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 bg-emerald-600 text-white shadow";
+        patientUI.init('patient-root-single');
+      } else if (view === 'hospital') {
+        hospitalCont.classList.remove('hidden');
+        btnHospital.className = "px-3 sm:px-4 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 bg-indigo-600 text-white shadow";
+        hospitalUI.init('hospital-root-single');
+      }
+    }
+
+    function toggleLanguageGlobal() {
+      const current = window.appState.state.language;
+      const next = current === 'en' ? 'hi' : 'en';
+      window.appState.setLanguage(next);
+      document.getElementById('lang-label').innerText = next === 'en' ? 'English | हिंदी' : 'हिंदी | English';
+    }
+
+    // App Initialization on DOM Load
+    window.addEventListener('DOMContentLoaded', () => {
+      const view = window.appState.state.currentView || 'dual';
+      updateViewDisplay(view);
+
+      // Keep header language label in sync
+      window.appState.subscribe((state) => {
+        const langLabel = document.getElementById('lang-label');
+        if (langLabel) {
+          langLabel.innerText = state.language === 'en' ? 'English | हिंदी' : 'हिंदी | English';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
