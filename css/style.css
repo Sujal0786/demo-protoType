@@ -89,3 +89,66 @@ body {
 .high-contrast-text {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
+
+/* Incoming Phone Ringing Shake Animation */
+@keyframes phone-ring-vibe {
+  0% { transform: rotate(0deg) scale(1); }
+  10% { transform: rotate(-15deg) scale(1.12); }
+  20% { transform: rotate(15deg) scale(1.12); }
+  30% { transform: rotate(-15deg) scale(1.12); }
+  40% { transform: rotate(15deg) scale(1.12); }
+  50% { transform: rotate(-10deg) scale(1.06); }
+  60% { transform: rotate(10deg) scale(1.06); }
+  70% { transform: rotate(0deg) scale(1); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+.animate-phone-ring {
+  display: inline-block;
+  animation: phone-ring-vibe 1.1s infinite ease-in-out;
+}
+
+/* Incoming Call Glow & Pulse */
+@keyframes call-glow {
+  0%, 100% {
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.6), 0 0 0 2px rgba(16, 185, 129, 0.85);
+  }
+  50% {
+    box-shadow: 0 0 45px rgba(59, 130, 246, 0.75), 0 0 0 4px rgba(99, 102, 241, 0.9);
+  }
+}
+
+.animate-call-banner {
+  animation: call-glow 1.6s infinite ease-in-out;
+}
+
+/* Slide in from top */
+@keyframes slide-down-fade {
+  from {
+    opacity: 0;
+    transform: translateY(-25px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-slide-down {
+  animation: slide-down-fade 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Flashing highlight for newly arrived token row */
+@keyframes row-new-arrival {
+  0%, 100% {
+    background-color: rgba(16, 185, 129, 0.22);
+  }
+  50% {
+    background-color: rgba(59, 130, 246, 0.25);
+  }
+}
+
+.row-new-online-token {
+  animation: row-new-arrival 1.8s infinite ease-in-out;
+  border-left: 5px solid #10b981 !important;
+}

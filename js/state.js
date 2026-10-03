@@ -2,8 +2,8 @@
 
 class AppState {
   constructor() {
-    this.STORAGE_KEY = 'opd_frontend_prototype_v2';
-    this.CHANNEL_NAME = 'opd_channel_sync_v2';
+    this.STORAGE_KEY = 'opd_frontend_prototype_v3';
+    this.CHANNEL_NAME = 'opd_channel_sync_v3';
     this.listeners = [];
     this.broadcastChannel = null;
 
@@ -18,7 +18,7 @@ class AppState {
         this.broadcastChannel.onmessage = (event) => {
           if (event.data && event.data.type === 'SYNC_STATE') {
             this.state = event.data.payload;
-            this.notifyListeners('SYNC');
+            this.notifyListeners(event.data.reason || 'SYNC', event.data.extraData);
           }
         };
       }
@@ -28,8 +28,14 @@ class AppState {
 
     window.addEventListener('storage', (e) => {
       if (e.key === this.STORAGE_KEY) {
+        const oldAlertTime = this.state?.incomingTokenAlert?.timestamp;
         this.loadFromStorage();
-        this.notifyListeners('STORAGE_SYNC');
+        const newAlert = this.state?.incomingTokenAlert;
+        if (newAlert && newAlert.timestamp !== oldAlertTime) {
+          this.notifyListeners('NEW_ONLINE_TOKEN', newAlert.token);
+        } else {
+          this.notifyListeners('STORAGE_SYNC');
+        }
       }
     });
   }
@@ -56,82 +62,119 @@ class AppState {
     } catch (e) {}
   }
 
-  saveState() {
+  saveState(reason = 'STATE_CHANGED', extraData = null) {
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.state));
     if (this.broadcastChannel) {
       try {
-        this.broadcastChannel.postMessage({ type: 'SYNC_STATE', payload: this.state });
+        this.broadcastChannel.postMessage({
+          type: 'SYNC_STATE',
+          payload: this.state,
+          reason,
+          extraData
+        });
       } catch (e) {}
     }
-    this.notifyListeners('STATE_CHANGED');
+    this.notifyListeners(reason, extraData);
   }
 
   resetToInitial(triggerNotify = true) {
     this.state = {
       language: 'en', // 'en' | 'hi'
       currentView: 'dual', // 'dual' | 'patient' | 'hospital'
-      patientScreen: 'welcome', // 'welcome' | 'hospitals' | 'doctors' | 'doctor-detail' | 'token-confirm' | 'live-track' | 'token-called' | 'help'
+      patientScreen: 'welcome', // 'welcome' | 'doctors' | 'doctor-detail' | 'token-confirm' | 'live-track' | 'token-called' | 'help'
       selectedHospitalId: 'hosp-1',
       selectedDoctorId: 'doc-rajesh',
       hospitalActiveDoctorId: 'doc-rajesh',
       hospitalIsLoggedIn: true,
       hospitalStaffName: "Reception Desk",
-      userToken: null, // Holds { tokenNumber: 25, doctorId: 'doc-rajesh', hospitalId: 'hosp-1', ... }
+      userToken: null, // Holds online booked token
       userBookedCount: 0, // First 3 free, then ₹10
       isQueuePaused: false,
 
-      // Doctor Queues matching user specification
+      // Doctor Queues with Hybrid Walk-In + Online support
       doctorQueues: {
         'doc-rajesh': {
           doctorId: 'doc-rajesh',
           doctorName: 'Dr. Rajesh Sharma',
           currentToken: 18,
-          totalTokens: 48,
-          waitingCount: 7,
-          completedCount: 20,
+          totalTokens: 18,
+          waitingCount: 0,
+          completedCount: 17,
           queue: [
-            { tokenNumber: 18, patientName: "Sukhwinder Singh", doctorName: "Dr. Sharma", status: "CALLING", fee: 0, isFree: true, isUser: false },
-            { tokenNumber: 19, patientName: "Aarti Devi", doctorName: "Dr. Sharma", status: "WAITING", fee: 0, isFree: true, isUser: false },
-            { tokenNumber: 20, patientName: "Harpreet Kaur", doctorName: "Dr. Sharma", status: "WAITING", fee: 0, isFree: true, isUser: false },
-            { tokenNumber: 21, patientName: "Patient A", doctorName: "Dr. Sharma", status: "WAITING", fee: 10, isFree: false, isUser: false },
-            { tokenNumber: 22, patientName: "Patient B", doctorName: "Dr. Sharma", status: "WAITING", fee: 10, isFree: false, isUser: false },
-            { tokenNumber: 23, patientName: "Patient C", doctorName: "Dr. Sharma", status: "WAITING", fee: 10, isFree: false, isUser: false },
-            { tokenNumber: 24, patientName: "Patient D", doctorName: "Dr. Sharma", status: "WAITING", fee: 10, isFree: false, isUser: false },
-            { tokenNumber: 25, patientName: "Patient E (Waiting)", doctorName: "Dr. Sharma", status: "WAITING", fee: 10, isFree: false, isUser: false },
-            { tokenNumber: 26, patientName: "Baldev Raj", doctorName: "Dr. Sharma", status: "WAITING", fee: 10, isFree: false, isUser: false },
-            { tokenNumber: 27, patientName: "Kiran Bala", doctorName: "Dr. Sharma", status: "WAITING", fee: 10, isFree: false, isUser: false }
+            {
+              tokenNumber: 18,
+              patientName: "Sukhwinder Singh",
+              age: 54,
+              gender: "Male",
+              place: "Moga (GT Road)",
+              phone: "98765-11221",
+              purpose: "Chest tightness & High BP",
+              purposeIcon: "❤️",
+              doctorName: "Dr. Sharma",
+              status: "CALLING",
+              fee: 0,
+              isFree: true,
+              isUser: false,
+              isWalkIn: false,
+              source: "PHYSICAL",
+              bookedAt: "09:15 AM"
+            }
           ]
         },
         'doc-neha': {
           doctorId: 'doc-neha',
           doctorName: 'Dr. Neha Gupta',
           currentToken: 11,
-          totalTokens: 24,
-          waitingCount: 4,
+          totalTokens: 11,
+          waitingCount: 0,
           completedCount: 10,
           queue: [
-            { tokenNumber: 11, patientName: "Baby Aarav", doctorName: "Dr. Gupta", status: "CALLING", fee: 0, isFree: true, isUser: false },
-            { tokenNumber: 12, patientName: "Baby Simran", doctorName: "Dr. Gupta", status: "WAITING", fee: 0, isFree: true, isUser: false },
-            { tokenNumber: 13, patientName: "Master Rohan", doctorName: "Dr. Gupta", status: "WAITING", fee: 0, isFree: true, isUser: false },
-            { tokenNumber: 14, patientName: "Baby Ananya", doctorName: "Dr. Gupta", status: "WAITING", fee: 10, isFree: false, isUser: false },
-            { tokenNumber: 15, patientName: "Master Kabir", doctorName: "Dr. Gupta", status: "WAITING", fee: 10, isFree: false, isUser: false }
+            {
+              tokenNumber: 11,
+              patientName: "Baby Aarav",
+              age: 4,
+              gender: "Male",
+              place: "Kotkapura",
+              phone: "98761-22334",
+              purpose: "High fever & persistent cough",
+              purposeIcon: "👶",
+              doctorName: "Dr. Gupta",
+              status: "CALLING",
+              fee: 0,
+              isFree: true,
+              isUser: false,
+              isWalkIn: false,
+              source: "PHYSICAL",
+              bookedAt: "09:20 AM"
+            }
           ]
         },
         'doc-amit': {
           doctorId: 'doc-amit',
           doctorName: 'Dr. Amit Kumar',
           currentToken: 16,
-          totalTokens: 32,
-          waitingCount: 6,
+          totalTokens: 16,
+          waitingCount: 0,
           completedCount: 15,
           queue: [
-            { tokenNumber: 16, patientName: "Joginder Pal", doctorName: "Dr. Kumar", status: "CALLING", fee: 0, isFree: true, isUser: false },
-            { tokenNumber: 17, patientName: "Sunita Rani", doctorName: "Dr. Kumar", status: "WAITING", fee: 0, isFree: true, isUser: false },
-            { tokenNumber: 18, patientName: "Mohinder Singh", doctorName: "Dr. Kumar", status: "WAITING", fee: 0, isFree: true, isUser: false },
-            { tokenNumber: 19, patientName: "Poonam Sharma", doctorName: "Dr. Kumar", status: "WAITING", fee: 10, isFree: false, isUser: false },
-            { tokenNumber: 20, patientName: "Deepak Verma", doctorName: "Dr. Kumar", status: "WAITING", fee: 10, isFree: false, isUser: false },
-            { tokenNumber: 21, patientName: "Rajinder Kaur", doctorName: "Dr. Kumar", status: "WAITING", fee: 10, isFree: false, isUser: false },
-            { tokenNumber: 22, patientName: "Vijay Kumar", doctorName: "Dr. Kumar", status: "WAITING", fee: 10, isFree: false, isUser: false }
+            {
+              tokenNumber: 16,
+              patientName: "Joginder Pal",
+              age: 51,
+              gender: "Male",
+              place: "Moga Camp",
+              phone: "98150-11223",
+              purpose: "Viral fever & body chills",
+              purposeIcon: "🤒",
+              doctorName: "Dr. Kumar",
+              status: "CALLING",
+              fee: 0,
+              isFree: true,
+              isUser: false,
+              isWalkIn: false,
+              source: "PHYSICAL",
+              bookedAt: "09:10 AM"
+            }
           ]
         }
       }
@@ -151,10 +194,10 @@ class AppState {
     };
   }
 
-  notifyListeners(reason = '') {
+  notifyListeners(reason = '', extraData = null) {
     this.listeners.forEach(cb => {
       try {
-        cb(this.state, reason);
+        cb(this.state, reason, extraData);
       } catch (e) {
         console.error("State listener error:", e);
       }
@@ -195,8 +238,108 @@ class AppState {
     this.saveState();
   }
 
-  // Patient clicks "GET MY TOKEN"
-  bookUserToken(doctorId = 'doc-rajesh') {
+  // Calculate the next sequential token number across online and walk-in patients
+  getNextAvailableToken(doctorId) {
+    const targetDocId = doctorId || this.state.hospitalActiveDoctorId || 'doc-rajesh';
+    const docQueue = this.state.doctorQueues[targetDocId];
+    if (!docQueue) return 1;
+
+    const maxInQueue = docQueue.queue && docQueue.queue.length > 0
+      ? docQueue.queue.reduce((max, t) => Math.max(max, t.tokenNumber), 0)
+      : 0;
+
+    return Math.max(docQueue.currentToken || 0, maxInQueue, docQueue.totalTokens || 0) + 1;
+  }
+
+  // Nurse adds physical walk-in patients arriving at hospital reception desk
+  addWalkInPatients(doctorId = 'doc-rajesh', count = 1, customDetails = null) {
+    const targetDocId = doctorId || this.state.hospitalActiveDoctorId || 'doc-rajesh';
+    const docQueue = this.state.doctorQueues[targetDocId];
+    if (!docQueue) return [];
+
+    const doctor = MOCK_DOCTORS.find(d => d.id === targetDocId) || MOCK_DOCTORS[0];
+    const hospital = MOCK_HOSPITALS.find(h => h.id === doctor.hospitalId) || MOCK_HOSPITALS[0];
+    const createdTokens = [];
+
+    for (let i = 0; i < count; i++) {
+      const nextNum = this.getNextAvailableToken(targetDocId);
+      const defaultName = count === 1
+        ? (customDetails?.name || `Walk-in Patient #${nextNum} (Hospital DB)`)
+        : `Walk-in Patient #${nextNum} (Reception DB)`;
+
+      const walkInToken = {
+        tokenNumber: nextNum,
+        patientName: customDetails?.name && count === 1 ? customDetails.name : defaultName,
+        age: customDetails?.age || (36 + ((nextNum * 3) % 30)),
+        gender: customDetails?.gender || (nextNum % 2 === 0 ? "Female" : "Male"),
+        place: customDetails?.place || "Physical Reception Desk",
+        phone: customDetails?.phone || "Reception Counter",
+        purpose: customDetails?.purpose || "OPD Walk-in Consultation",
+        purposeIcon: "🏥",
+        doctorName: doctor.nameEn,
+        doctorId: doctor.id,
+        hospitalName: hospital.nameEn,
+        roomNumber: doctor.roomNumber,
+        status: "WAITING",
+        fee: 0,
+        isFree: true,
+        isUser: false,
+        isWalkIn: true,
+        source: "RECEPTION_WALKIN",
+        bookedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+
+      docQueue.queue.push(walkInToken);
+      docQueue.totalTokens = Math.max(docQueue.totalTokens || 0, nextNum);
+      createdTokens.push(walkInToken);
+    }
+
+    docQueue.queue.sort((a, b) => a.tokenNumber - b.tokenNumber);
+    docQueue.waitingCount = docQueue.queue.filter(t => t.tokenNumber > docQueue.currentToken).length;
+
+    this.saveState();
+    return createdTokens;
+  }
+
+  // Quick reset to Token #18 calling in room for doctor presentation / pitch
+  resetDoctorQueueTo18(doctorId = 'doc-rajesh') {
+    const docQueue = this.state.doctorQueues[doctorId];
+    if (!docQueue) return;
+
+    docQueue.currentToken = 18;
+    docQueue.totalTokens = 18;
+    docQueue.waitingCount = 0;
+    docQueue.completedCount = 17;
+    docQueue.queue = [
+      {
+        tokenNumber: 18,
+        patientName: "Sukhwinder Singh",
+        age: 54,
+        gender: "Male",
+        place: "Moga (GT Road)",
+        phone: "98765-11221",
+        purpose: "Chest tightness & High BP",
+        purposeIcon: "❤️",
+        doctorName: "Dr. Sharma",
+        status: "CALLING",
+        fee: 0,
+        isFree: true,
+        isUser: false,
+        isWalkIn: false,
+        source: "PHYSICAL",
+        bookedAt: "09:15 AM"
+      }
+    ];
+
+    if (this.state.userToken && this.state.userToken.doctorId === doctorId) {
+      this.state.userToken = null;
+    }
+    this.state.patientScreen = 'welcome';
+    this.saveState();
+  }
+
+  // Patient clicks "GET MY TOKEN" from home
+  bookUserToken(doctorId = 'doc-rajesh', patientDetails = null) {
     const docQueue = this.state.doctorQueues[doctorId];
     if (!docQueue) return null;
 
@@ -205,18 +348,31 @@ class AppState {
     const isFree = this.state.userBookedCount <= 3;
     const fee = isFree ? 0 : 10;
 
-    // In demo flow, assign Token #25 for Dr. Rajesh Sharma as specified in prompt
-    let tokenNum = 25;
-    if (doctorId !== 'doc-rajesh') {
-      tokenNum = docQueue.currentToken + docQueue.waitingCount + 1;
-    }
+    // Dynamically calculate the next available token number in the hybrid queue!
+    const tokenNum = this.getNextAvailableToken(doctorId);
 
     const doctor = MOCK_DOCTORS.find(d => d.id === doctorId) || MOCK_DOCTORS[0];
     const hospital = MOCK_HOSPITALS.find(h => h.id === doctor.hospitalId) || MOCK_HOSPITALS[0];
 
+    const details = patientDetails || {
+      name: "Gurpreet Singh (घर से मरीज)",
+      age: 45,
+      gender: "Male",
+      place: "Moga (GT Road)",
+      phone: "98765-43210",
+      purpose: "Chest pain & Routine checkup",
+      purposeIcon: "❤️"
+    };
+
     const newToken = {
       tokenNumber: tokenNum,
-      patientName: "You (घर से मरीज)",
+      patientName: details.name || "Gurpreet Singh",
+      age: details.age || 45,
+      gender: details.gender || "Male",
+      place: details.place || "Moga (GT Road)",
+      phone: details.phone || "98765-43210",
+      purpose: details.purpose || "Consultation & Checkup",
+      purposeIcon: details.purposeIcon || "🩺",
       doctorName: doctor.nameEn,
       doctorId: doctor.id,
       hospitalName: hospital.nameEn,
@@ -225,10 +381,20 @@ class AppState {
       fee: fee,
       isFree: isFree,
       isUser: true,
-      bookedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      isWalkIn: false,
+      source: "ONLINE_HOME",
+      bookedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      bookedTimestamp: Date.now()
     };
 
     this.state.userToken = newToken;
+    this.state.lastPatientDetails = details;
+    this.state.latestNewOnlineToken = newToken;
+    this.state.incomingTokenAlert = {
+      token: newToken,
+      doctorId: doctorId,
+      timestamp: Date.now()
+    };
 
     // Synchronize to hospital queue!
     const existingIndex = docQueue.queue.findIndex(item => item.tokenNumber === tokenNum);
@@ -245,7 +411,7 @@ class AppState {
 
     // Switch patient screen to token-confirm
     this.state.patientScreen = 'token-confirm';
-    this.saveState();
+    this.saveState('NEW_ONLINE_TOKEN', newToken);
 
     return newToken;
   }

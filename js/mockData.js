@@ -67,8 +67,8 @@ const MOCK_DOCTORS = [
     opdTime: "09:00 AM - 02:00 PM",
     photo: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=500&auto=format&fit=crop&q=80",
     initialCurrentToken: 18,
-    initialNextToken: 25, // Patient gets Token #25
-    initialWaiting: 7,
+    initialNextToken: 19,
+    initialWaiting: 0,
     statusTextEn: "Available Today",
     statusTextHi: "आज उपस्थित हैं",
     voicePromptEn: "Doctor Rajesh Sharma. Heart Specialist. Room 204. Current token 18.",
@@ -120,15 +120,120 @@ const MOCK_DOCTORS = [
   }
 ];
 
-// Initial realistic queue for Dr. Rajesh Sharma
+// Initial realistic queue for Dr. Rajesh Sharma with comprehensive clinical details
 const INITIAL_QUEUE_RAJESH = [
-  { tokenNumber: 18, patientName: "Sukhwinder Singh", doctorId: "doc-rajesh", status: "CALLING", fee: 0, isFree: true, isUser: false },
-  { tokenNumber: 19, patientName: "Aarti Devi", doctorId: "doc-rajesh", status: "WAITING", fee: 0, isFree: true, isUser: false },
-  { tokenNumber: 20, patientName: "Harpreet Kaur", doctorId: "doc-rajesh", status: "WAITING", fee: 0, isFree: true, isUser: false },
-  { tokenNumber: 21, patientName: "Patient A (Ramesh)", doctorId: "doc-rajesh", status: "WAITING", fee: 10, isFree: false, isUser: false },
-  { tokenNumber: 22, patientName: "Patient B (Gurpreet)", doctorId: "doc-rajesh", status: "WAITING", fee: 10, isFree: false, isUser: false },
-  { tokenNumber: 23, patientName: "Patient C (Manjit)", doctorId: "doc-rajesh", status: "WAITING", fee: 10, isFree: false, isUser: false },
-  { tokenNumber: 24, patientName: "Patient D (Sunita)", doctorId: "doc-rajesh", status: "WAITING", fee: 10, isFree: false, isUser: false }
+  {
+    tokenNumber: 18,
+    patientName: "Sukhwinder Singh",
+    age: 54,
+    gender: "Male",
+    place: "Moga (GT Road)",
+    phone: "98765-11221",
+    purpose: "Chest tightness & High BP check",
+    purposeIcon: "❤️",
+    doctorId: "doc-rajesh",
+    status: "CALLING",
+    fee: 0,
+    isFree: true,
+    isUser: false,
+    bookedAt: "09:15 AM"
+  },
+  {
+    tokenNumber: 19,
+    patientName: "Aarti Devi",
+    age: 36,
+    gender: "Female",
+    place: "Bagha Purana",
+    phone: "98140-22334",
+    purpose: "Shortness of breath & Palpitations",
+    purposeIcon: "🫁",
+    doctorId: "doc-rajesh",
+    status: "WAITING",
+    fee: 0,
+    isFree: true,
+    isUser: false,
+    bookedAt: "09:22 AM"
+  },
+  {
+    tokenNumber: 20,
+    patientName: "Harpreet Kaur",
+    age: 61,
+    gender: "Female",
+    place: "Kotkapura",
+    phone: "98722-33445",
+    purpose: "Heart checkup & ECG review",
+    purposeIcon: "❤️",
+    doctorId: "doc-rajesh",
+    status: "WAITING",
+    fee: 0,
+    isFree: true,
+    isUser: false,
+    bookedAt: "09:30 AM"
+  },
+  {
+    tokenNumber: 21,
+    patientName: "Ramesh Kumar",
+    age: 42,
+    gender: "Male",
+    place: "Nihal Singh Wala",
+    phone: "98888-44556",
+    purpose: "Chest discomfort after walking",
+    purposeIcon: "❤️",
+    doctorId: "doc-rajesh",
+    status: "WAITING",
+    fee: 10,
+    isFree: false,
+    isUser: false,
+    bookedAt: "09:38 AM"
+  },
+  {
+    tokenNumber: 22,
+    patientName: "Gurpreet Kaur",
+    age: 29,
+    gender: "Female",
+    place: "Moga City",
+    phone: "97799-55667",
+    purpose: "Routine blood pressure checkup",
+    purposeIcon: "🩺",
+    doctorId: "doc-rajesh",
+    status: "WAITING",
+    fee: 10,
+    isFree: false,
+    isUser: false,
+    bookedAt: "09:45 AM"
+  },
+  {
+    tokenNumber: 23,
+    patientName: "Manjit Singh",
+    age: 58,
+    gender: "Male",
+    place: "Dharamkot",
+    phone: "98155-66778",
+    purpose: "Post-angioplasty routine follow-up",
+    purposeIcon: "📋",
+    doctorId: "doc-rajesh",
+    status: "WAITING",
+    fee: 10,
+    isFree: false,
+    isUser: false,
+    bookedAt: "09:50 AM"
+  },
+  {
+    tokenNumber: 24,
+    patientName: "Sunita Sharma",
+    age: 47,
+    gender: "Female",
+    place: "Moga Camp",
+    phone: "98760-77889",
+    purpose: "Dizziness & irregular pulse rate",
+    purposeIcon: "❤️",
+    doctorId: "doc-rajesh",
+    status: "WAITING",
+    fee: 10,
+    isFree: false,
+    isUser: false,
+    bookedAt: "09:55 AM"
+  }
 ];
 
 // UI Dictionaries for Hindi / English

@@ -10,8 +10,8 @@ class DemoRunner {
 
     this.steps = [
       {
-        title: "Step 1: Patient Opens App at Home",
-        desc: "Patient starts from home without traveling to the hospital.",
+        title: "Step 1: Patient Opens City Care Hospital Portal",
+        desc: "Direct single hospital portal link. No 'Find Hospital' directory needed.",
         action: () => {
           window.appState.resetToInitial(false);
           window.appState.setCurrentView('dual');
@@ -19,76 +19,75 @@ class DemoRunner {
         }
       },
       {
-        title: "Step 2: Patient Selects Hospital",
-        desc: "Patient taps 'Find Hospital' and selects City Care Hospital, Moga.",
+        title: "Step 2: 3 Physical Patients Arrive at Hospital Reception Desk",
+        desc: "Patients present at front desk. Receptionist uses OPD Token Desk without disturbing clinic software.",
         action: () => {
-          window.appState.setPatientScreen('hospitals');
-          setTimeout(() => {
-            window.appState.selectHospital('hosp-1');
-          }, 1200);
+          window.hospitalUI.showToast("🏥 3 physical patients arrived at reception counter!");
         }
       },
       {
-        title: "Step 3: Patient Sees Doctor Profile Photos",
-        desc: "Large doctor photos and clear waiting numbers are displayed.",
+        title: "Step 3: Nurse Increments Queue (+3 Walk-Ins) into Hospital DB",
+        desc: "Tokens #19, #20, #21 allocated to Walk-In patients. Next online token will now be #22!",
         action: () => {
-          window.appState.setPatientScreen('doctors');
+          window.hospitalUI.addWalkIns(3);
         }
       },
       {
-        title: "Step 4: Patient Clicks Dr. Rajesh Sharma",
-        desc: "Selects Heart Specialist, Room 204. Current Token: 18, Waiting: 7.",
+        title: "Step 4: Online Patient at Home Selects Dr. Rajesh Sharma",
+        desc: "Patient at home sees current token #18, 3 walk-ins waiting ahead, and Next Token #22!",
         action: () => {
           window.appState.selectDoctor('doc-rajesh');
         }
       },
       {
-        title: "Step 5: Patient Clicks 'GET MY TOKEN'",
-        desc: "Generates Token #25! First 3 tokens are 100% FREE (₹0 charge).",
+        title: "Step 5: Patient Books From Home & Nurse Reception Rings!",
+        desc: "Gurpreet Singh books Token #22 from home. Reception console rings phone chime notification & pops up incoming patient card in Hospital DB!",
         action: () => {
           if (window.sound) window.sound.playSuccessSound();
-          window.appState.bookUserToken('doc-rajesh');
+          window.appState.bookUserToken('doc-rajesh', {
+            name: "Gurpreet Singh",
+            age: 45,
+            gender: "Male",
+            place: "Moga (GT Road)",
+            phone: "98765-43210",
+            purpose: "Chest heaviness & Routine checkup",
+            purposeIcon: "❤️"
+          });
         }
       },
       {
-        title: "Step 6: Patient Sees Token Confirmation Pass",
-        desc: "Token #25 is issued. 6 people ahead (~35 min wait). Patient told to wait at home.",
+        title: "Step 6: Patient Token Pass Shows 3 Reception Patients Ahead",
+        desc: "Token #22 Pass confirms: 3 people ahead at hospital reception. No waiting in line!",
         action: () => {
           window.appState.setPatientScreen('token-confirm');
         }
       },
       {
-        title: "Step 7: Patient Opens Live Queue Tracker",
-        desc: "Shows real-time queue. Patient can sit comfortably at home.",
+        title: "Step 7: Hospital OPD Desk Shows Unified Hybrid Queue",
+        desc: "Hospital DB stores both Walk-Ins (#19, #20, #21) and Online Booking (#22) in exact sequence!",
         action: () => {
-          window.appState.setPatientScreen('live-track');
-        }
-      },
-      {
-        title: "Step 8: Hospital Dashboard Synchronizes Immediately",
-        desc: "Notice the right side! Hospital OPD staff sees Token #25 in the waiting list.",
-        action: () => {
+          if (window.hospitalUI) window.hospitalUI.dismissIncomingAlert(true);
           window.appState.setHospitalActiveDoctor('doc-rajesh');
+          setTimeout(() => {
+            window.hospitalUI.showPatientDetailsModal(22, 'doc-rajesh');
+            setTimeout(() => {
+              const modal = document.getElementById('patient-details-modal');
+              if (modal) modal.remove();
+            }, 2200);
+          }, 600);
         }
       },
       {
-        title: "Step 9: Hospital Calls Next Token (18 → 19)",
-        desc: "Staff clicks 'CALL NEXT PATIENT'. Previous token marked Done, 19 is Called.",
+        title: "Step 8: Hospital Calls Walk-In Token #19",
+        desc: "Staff calls Token #19. Walk-in patient enters consultation room.",
         action: () => {
           window.appState.callNextToken('doc-rajesh');
           if (window.sound) window.sound.playHospitalChime();
         }
       },
       {
-        title: "Step 10: Hospital Calls Next Token (19 → 20)",
-        desc: "Queue moves forward in real time. Patient's phone shows '5 people before you'.",
-        action: () => {
-          window.appState.callNextToken('doc-rajesh');
-        }
-      },
-      {
-        title: "Step 11: Hospital Calls Next Token (20 → 21 → 22)",
-        desc: "Staff continues consulting patients. Token moves to #22.",
+        title: "Step 9: Hospital Calls Walk-In Tokens #20 & #21",
+        desc: "Queue advances smoothly. Online patient at home sees their turn approaching!",
         action: () => {
           window.appState.callNextToken('doc-rajesh');
           setTimeout(() => {
@@ -97,21 +96,11 @@ class DemoRunner {
         }
       },
       {
-        title: "Step 12: Hospital Calls Next Token (22 → 23 → 24)",
-        desc: "Patient status turns yellow: 'Please start coming to hospital now!'",
+        title: "Step 10: Hospital Calls Token #22 — ONLINE PATIENT TURN!",
+        desc: "Token #22 is active! Patient's phone triggers alarm bell chime and voice alert!",
         action: () => {
           window.appState.callNextToken('doc-rajesh');
-          setTimeout(() => {
-            window.appState.callNextToken('doc-rajesh');
-          }, 800);
-        }
-      },
-      {
-        title: "Step 13: Hospital Calls Token #25 — YOUR TURN!",
-        desc: "Token #25 is active! Patient screen triggers full-screen alert + hospital chime bell!",
-        action: () => {
-          window.appState.callNextToken('doc-rajesh');
-          // State manager automatically redirects patient to 'token-called' screen!
+          // State manager automatically alerts and transitions patient screen!
         }
       }
     ];

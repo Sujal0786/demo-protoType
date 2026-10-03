@@ -36,8 +36,9 @@ flowchart LR
 - Patient arrives, hears their token called, and walks directly into the doctor's room.
 <!-- slide -->
 ### Slide 3: For Doctor & Hospital Staff
-# 1-Click Zero-Stress Queue Management
-- **Zero Software Installation**: Runs directly on any existing smartphone, tablet, or reception PC browser.
+# 1-Click Zero-Stress Queue & Patient Records
+- **Complete Patient Clinical Info**: Name, Age, Sex, Place, Phone, and Purpose of Visit collected upon booking.
+- **1-Click Clinical OPD Slip**: Click on any patient's name to view their full demographics, complaint, and direct call button.
 - **1-Click Call Next**: Staff presses **"CALL NEXT PATIENT"**, next token is displayed and announced automatically.
 - **Doctor-Wise Segregation**: Separate independent queues for Cardiologist, Pediatrician, General OPD, etc.
 - **Walk-in & Emergency Ready**: Reception can insert walk-in patients or emergency tokens instantly.
@@ -77,8 +78,8 @@ flowchart LR
 *(Take out your tablet or phone showing the app in Dual View)*
 
 > *"Doctor Sahab, dekhiye yeh kaise kaam karta hai:
-> 1. Yeh left side par patient ka phone hai jo ghar par baitha hai. Usne aapki photo par tap kiya aur **Token #25** mil gaya.
-> 2. Right side par aapke reception ka screen hai. Dekhiye, Token #25 turant aapki list mein live jud gaya!
+> 1. Yeh left side par patient ka phone hai jo ghar par baitha hai. Usne apna naam (Gurpreet Singh), umar (45), gaon (Moga), aur bimari (Chest Pain) daal kar **Token #25** le liya.
+> 2. Right side par aapke reception ka screen hai. Dekhiye, Token #25 turant live jud gaya! Aap unke naam par click karenge, toh unka pura OPD Slip khul jayega jisme unki umar, gender, gaon, phone number aur aane ka kaaran (Purpose of Visit) turant dikhta hai.
 > 3. Jaise hi aapka pehla patient khatam hua, aapke staff ne dabaya **'CALL NEXT'**.
 > 4. Turant bell baji, Hindi mein aawaz aayi, aur patient ke phone par alert aa gaya: 'Aapki baari aa gayi hai, Room 204 mein padharein!'"*
 

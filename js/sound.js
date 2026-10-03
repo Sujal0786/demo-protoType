@@ -7,6 +7,23 @@ class SoundEngine {
     this.synth = window.speechSynthesis || null;
     this.currentUtterance = null;
     this.voiceLanguage = 'hi-IN'; // default Hindi for India healthcare context
+    this.isRinging = false;
+    this.ringtoneTimeouts = [];
+    this.activeOscillators = [];
+    this.ringtoneMasterGain = null;
+
+    // Auto unlock on first user gesture anywhere
+    const unlock = () => {
+      this.initAudio();
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('pointerdown', unlock);
+        document.removeEventListener('keydown', unlock);
+      }
+    };
+    if (typeof document !== 'undefined') {
+      document.addEventListener('pointerdown', unlock, { once: true });
+      document.addEventListener('keydown', unlock, { once: true });
+    }
   }
 
   initAudio() {
@@ -18,6 +35,113 @@ class SoundEngine {
     }
     if (this.audioCtx && this.audioCtx.state === 'suspended') {
       this.audioCtx.resume();
+    }
+  }
+
+  // Incoming Online Booking Ringtone (Simulates Hospital Reception Desk Phone / Counter Ring)
+  // Double-ring chime sequence: [Ring 320ms - Gap 100ms - Ring 320ms] ... repeated 3 times
+  playIncomingBookingRingtone(tokenNumber = null, patientName = null, withVoice = true) {
+    try {
+      this.initAudio();
+      if (!this.audioCtx) return;
+
+      this.stopIncomingRingtone(); // Stop any active ringing first
+      this.isRinging = true;
+
+      const now = this.audioCtx.currentTime;
+      this.ringtoneMasterGain = this.audioCtx.createGain();
+      this.ringtoneMasterGain.connect(this.audioCtx.destination);
+      this.ringtoneMasterGain.gain.setValueAtTime(0.35, now);
+
+      // Play 3 double-ring cycles (approx 5.2 seconds total)
+      const ringCycles = 3;
+      const cadencePeriod = 1.65; // seconds per cycle
+
+      for (let c = 0; c < ringCycles; c++) {
+        const cycleStart = now + c * cadencePeriod;
+        // Ring burst 1
+        this._scheduleRingBurst(cycleStart, 0.32);
+        // Ring burst 2
+        this._scheduleRingBurst(cycleStart + 0.42, 0.32);
+      }
+
+      // Schedule auto-stop and optional voice announcement after rings
+      const totalRingtoneDuration = ringCycles * cadencePeriod;
+      const timer = setTimeout(() => {
+        this.isRinging = false;
+        if (withVoice && tokenNumber && this.synth) {
+          const isHi = window.appState?.state?.language === 'hi';
+          const msg = isHi
+            ? `नया ऑनलाइन टोकन प्राप्त हुआ। टोकन नंबर ${tokenNumber}।`
+            : `New online patient token received. Token number ${tokenNumber}.`;
+          this.speak(msg, isHi ? 'hi-IN' : 'en-IN');
+        }
+      }, totalRingtoneDuration * 1000);
+
+      this.ringtoneTimeouts.push(timer);
+    } catch (e) {
+      console.warn("Incoming ringtone error:", e);
+    }
+  }
+
+  // Dual-frequency acoustic telephone ring burst
+  _scheduleRingBurst(startTime, duration) {
+    if (!this.audioCtx || !this.ringtoneMasterGain) return;
+
+    // Harmonic pair: G5 (783.99 Hz) & C6 (1046.50 Hz) - pleasant, clear, attention-grabbing
+    const frequencies = [783.99, 1046.50];
+
+    frequencies.forEach(freq => {
+      const osc = this.audioCtx.createOscillator();
+      const burstGain = this.audioCtx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, startTime);
+
+      // Smooth attack, sustain, and clean exponential decay
+      burstGain.gain.setValueAtTime(0.0001, startTime);
+      burstGain.gain.linearRampToValueAtTime(0.22, startTime + 0.025);
+      burstGain.gain.setValueAtTime(0.22, startTime + duration - 0.05);
+      burstGain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+      osc.connect(burstGain);
+      burstGain.connect(this.ringtoneMasterGain);
+
+      osc.start(startTime);
+      osc.stop(startTime + duration + 0.06);
+
+      this.activeOscillators.push(osc);
+    });
+  }
+
+  // Stop incoming ringtone immediately (e.g. when nurse clicks Acknowledge or View Details)
+  stopIncomingRingtone() {
+    this.isRinging = false;
+
+    if (this.ringtoneTimeouts && this.ringtoneTimeouts.length > 0) {
+      this.ringtoneTimeouts.forEach(t => clearTimeout(t));
+      this.ringtoneTimeouts = [];
+    }
+
+    if (this.ringtoneMasterGain && this.audioCtx) {
+      try {
+        const now = this.audioCtx.currentTime;
+        this.ringtoneMasterGain.gain.cancelScheduledValues(now);
+        this.ringtoneMasterGain.gain.linearRampToValueAtTime(0.0001, now + 0.05);
+      } catch (e) {}
+    }
+
+    if (this.activeOscillators && this.activeOscillators.length > 0) {
+      this.activeOscillators.forEach(osc => {
+        try {
+          osc.stop();
+        } catch (e) {}
+      });
+      this.activeOscillators = [];
+    }
+
+    if (this.synth) {
+      this.synth.cancel();
     }
   }
 
